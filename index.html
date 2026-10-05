@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Daru Desi – Alcohol Catalog &amp; Price Comparison</title>
+<meta name="description" content="Your smart companion for exploring alcohol options and prices across cities.">
+<meta name="theme-color" content="#121212">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Daru Desi">
+<meta property="og:title" content="Daru Desi – Alcohol Catalog & Price Comparison">
+<meta property="og:description" content="Your smart companion for exploring alcohol options and prices across cities.">
+<meta property="og:url" content="https://daru-desi.suvadipchakraborty.workers.dev/">
+<meta property="og:image" content="https://daru-desi.suvadipchakraborty.workers.dev/preview.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://daru-desi.suvadipchakraborty.workers.dev/preview.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+  <div class="gate-box">
+    <div class="gate-mark" aria-hidden="true">🥃</div>
+    <h1 id="gate-title">Welcome to Daru Desi.</h1>
+    <p>You must be of legal drinking age to enter.</p>
+    <button class="btn" id="gate-yes">I am over 18 (Enter)</button>
+    <button class="btn ghost" id="gate-no">I am under 18 (Exit)</button>
+  </div>
+</div>
+
+<div id="app" inert>
+  <header class="top">
+    <div class="brand">Daru <span>Desi</span></div>
+  </header>
+
+  <main>
+    <section id="view-browse" class="view">
+      <div class="filters">
+        <label class="field"><span>Select City</span><select id="city"></select></label>
+        <input id="search" type="search" placeholder="Search a brand…" aria-label="Search brand" autocomplete="off">
+        <div id="pills" class="pills" role="tablist" aria-label="Category"></div>
+      </div>
+      <p id="count" class="muted"></p>
+      <div id="grid" class="grid" aria-live="polite"></div>
+    </section>
+
+    <section id="view-travel" class="view" hidden>
+      <h2>Travel deals</h2>
+      <p class="muted">Pick where you live and where you’re headed. We list bottles that cost less there.</p>
+      <label class="field"><span>My Home City</span><select id="home"></select></label>
+      <label class="field"><span>Destination City</span><select id="dest"></select></label>
+      <button id="find" class="btn big">Find Deals</button>
+      <div id="deals" class="deals" aria-live="polite"></div>
+    </section>
+
+    <section id="view-about" class="view" hidden>
+      <h2>Daru Desi</h2>
+      <p>Your smart companion for exploring alcohol options and prices across cities.</p>
+      <h3>Features</h3>
+      <ul>
+        <li>City-wise Browsing</li>
+        <li>Smart Alternatives based on Category &amp; Brand</li>
+        <li>Travel Arbitrage Calculator to find the best inter-city deals</li>
+      </ul>
+      <h3>Benefits</h3>
+      <p>Helps users make informed choices, discover highly-rated alternatives, and save money while traveling.</p>
+      <button id="install" class="btn" hidden>Save App</button>
+      <p id="ios-hint" class="muted" hidden>On iPhone: tap Share, then “Add to Home Screen”.</p>
+      <p class="disclaimer">Please drink responsibly. Prices are subject to change.</p>
+    </section>
+  </main>
+
+  <nav class="tabs" aria-label="Main">
+    <button class="tab on" data-tab="browse"><i>🥃</i>Browse</button>
+    <button class="tab" data-tab="travel"><i>✈️</i>Travel</button>
+    <button class="tab" data-tab="about"><i>ℹ️</i>About</button>
+  </nav>
+</div>
+
+<div id="modal" class="modal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Drink details">
+    <button class="close" id="close" aria-label="Close">✕</button>
+    <div id="sheet-body"></div>
+  </div>
+</div>
+<div id="toast" class="toast" role="status"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
