@@ -37,17 +37,23 @@
 <div id="app" inert>
   <header class="top">
     <div class="brand">Daru <span>Desi</span></div>
+    <div class="tag">Every bottle. Every city. The best price.</div>
   </header>
 
   <main>
     <section id="view-browse" class="view">
       <div class="filters">
-        <label class="field"><span>Select City</span><select id="city"></select></label>
-        <input id="search" type="search" placeholder="Search a brand…" aria-label="Search brand" autocomplete="off">
-        <div id="pills" class="pills" role="tablist" aria-label="Category"></div>
+        <div class="row2">
+          <label class="field"><span>Select City</span><select id="city"></select></label>
+          <label class="field"><span>Search</span><input id="search" type="search" placeholder="Brand or bottle…" aria-label="Search brand" autocomplete="off"></label>
+        </div>
+        <div id="pills" class="pills" aria-label="Category"></div>
+        <div class="chiprow"><span class="lbl">Rating</span><div id="rate" class="pills" aria-label="Minimum rating"></div></div>
+        <div class="chiprow"><span class="lbl">Size</span><div id="sizes" class="pills" aria-label="Bottle size"></div></div>
       </div>
       <p id="count" class="muted"></p>
       <div id="grid" class="grid" aria-live="polite"></div>
+      <button id="more" class="btn ghost more" hidden>Show more</button>
     </section>
 
     <section id="view-travel" class="view" hidden>

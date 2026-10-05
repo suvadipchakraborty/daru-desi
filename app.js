@@ -1,7 +1,7 @@
 'use strict';
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS_MRZiKIO6GAyq9LJZg9O02Tlq3UxKb9pPSnlZS-74vYPPkMMd87b8PiOmEsArWG1q1xeOxr96DwRa/pub?gid=1675226732&single=true&output=csv';
 const $ = s => document.querySelector(s);
-const state = { data: [], cities: [], cats: [], city: '', cat: 'All', q: '' };
+const state = { data: [], cities: [], cats: [], city: '', cat: 'All', q: '', minR: 0, size: 'All', limit: 60 };
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const inr = n => '₹' + Math.round(n).toLocaleString('en-IN');
@@ -76,24 +76,41 @@ function initUI() {
   fillSelect($('#dest'), state.cities, state.cities[1] || state.cities[0]);
   renderPills(); renderGrid();
 }
+const THEMES = [[/whisk|scotch|malt|bourbon/, '🥃', '#e8a33d'], [/rum/, '🏴‍☠️', '#d0722e'], [/vodka/, '🧊', '#7ec8e3'], [/gin/, '🌿', '#6fbf8e'],
+  [/spark|champ/, '🍾', '#f0dc9a'], [/rose|rosé/, '🌸', '#e88fa6'], [/red/, '🍷', '#c23b55'], [/white/, '🥂', '#e6d98a'], [/beer|lager|ale/, '🍺', '#f0b429'], [/brandy|cognac/, '🍇', '#b0703a']];
+const theme = c => { const t = THEMES.find(t => t[0].test(c.toLowerCase())); return t ? [t[1], t[2]] : ['🍸', '#e8a33d']; };
+const sizeLabel = k => { const n = parseInt(k); return isNaN(n) ? k : n >= 1000 ? (n / 1000) + ' L' : n + ' ml'; };
+
 function renderPills() {
-  $('#pills').innerHTML = ['All', ...state.cats].map(c =>
-    `<button class="pill ${c === state.cat ? 'on' : ''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('');
+  const inCity = state.data.filter(d => d.city === state.city);
+  const cats = uniq(inCity.map(d => d.category));
+  if (state.cat !== 'All' && !cats.includes(state.cat)) state.cat = 'All';
+  const sz = [...new Set(inCity.map(d => d.sizeKey))].sort((a, b) => (parseInt(a) || 0) - (parseInt(b) || 0));
+  if (state.size !== 'All' && !sz.includes(state.size)) state.size = 'All';
+  const pill = (on, attr, val, label) => `<button class="pill ${on ? 'on' : ''}" data-${attr}="${esc(val)}">${label}</button>`;
+  $('#pills').innerHTML = ['All', ...cats].map(c => pill(c === state.cat, 'cat', c, (c === 'All' ? '' : theme(c)[0] + ' ') + esc(c))).join('');
+  $('#rate').innerHTML = [0, 3.5, 4, 4.5].map(v => pill(v === state.minR, 'rate', v, v ? '★ ' + v + '+' : 'Any')).join('');
+  $('#sizes').innerHTML = ['All', ...sz].map(k => pill(k === state.size, 'size', k, k === 'All' ? 'All' : sizeLabel(k))).join('');
 }
 function renderGrid() {
   const q = state.q.toLowerCase();
   const list = state.data.filter(d => d.city === state.city && (state.cat === 'All' || d.category === state.cat) &&
+    (state.size === 'All' || d.sizeKey === state.size) && d.rating >= state.minR &&
     (!q || (d.name + ' ' + d.brand).toLowerCase().includes(q))).sort((a, b) => b.rating - a.rating || a.price - b.price);
-  $('#count').textContent = list.length ? `${list.length} drinks in ${state.city}` : '';
-  $('#grid').innerHTML = list.length ? list.map(cardHTML).join('') : '<div class="empty">No drinks match. Try another category or search.</div>';
+  $('#count').textContent = list.length ? `${list.length.toLocaleString('en-IN')} bottles in ${state.city}` : '';
+  $('#grid').innerHTML = list.length ? list.slice(0, state.limit).map(cardHTML).join('') : '<div class="empty">No bottles match these filters. Try a lower rating or another size.</div>';
+  $('#more').hidden = list.length <= state.limit;
+  $('#more').textContent = `Show more (${list.length - state.limit} left)`;
 }
-const stars = r => r ? `<span class="rating">★ ${r.toFixed(1)}</span>` : '<span class="muted">Not rated</span>';
+const stars = r => r ? `<span class="gauge" title="${r} out of 5"><b>★ ${r.toFixed(1)}</b><i><u style="width:${r * 20}%"></u></i></span>` : '<span class="muted">Unrated</span>';
 function cardHTML(d) {
-  return `<div class="card" tabindex="0" role="button" data-id="${d.id}">
+  const [e, c] = theme(d.category);
+  return `<div class="card" style="--c:${c}" tabindex="0" role="button" data-id="${d.id}">
+    <div class="ico">${e}</div>
     <button class="share" data-share="${d.id}" aria-label="Share ${esc(d.name)}">⤴</button>
     <div class="name">${esc(d.name)}</div>
-    <div class="meta">${esc(d.category)} · ${esc(d.size || '—')}</div>
-    <div class="price">${inr(d.price)}</div>${stars(d.rating)}</div>`;
+    <div class="meta">${esc(d.category)} · ${esc(sizeLabel(d.sizeKey))}</div>
+    <div class="foot"><span class="price">${inr(d.price)}</span>${stars(d.rating)}</div></div>`;
 }
 
 /* ---------- Modal + alternatives ---------- */
@@ -107,6 +124,7 @@ function openModal(id) {
     <p><button class="btn" data-share="${d.id}">Share this price</button></p>
     <h3>You might also like</h3>
     <div class="alts">${alts.map(a => `<button class="alt" data-id="${a.id}"><span>${esc(a.name)}<small>${esc(a.category)} · ${esc(a.size || '—')} · ${stars(a.rating).replace(/<[^>]+>/g, '')}</small></span><b class="price">${inr(a.price)}</b></button>`).join('') || '<p class="muted">No alternatives in this city yet.</p>'}</div>`;
+  $('.sheet').style.setProperty('--c', theme(d.category)[1]);
   $('#modal').hidden = false; document.body.style.overflow = 'hidden';
   $('#sheet-body').parentElement.scrollTop = 0;
 }
@@ -131,7 +149,7 @@ function findDeals() {
   const h = minBy(home), t = minBy(dest), deals = [];
   t.forEach((d, k) => { const x = h.get(k); if (x && d.price < x.price) deals.push({ d, x, save: x.price - d.price }); });
   deals.sort((a, b) => b.save - a.save);
-  out.innerHTML = deals.length ? deals.map(({ d, x, save }) =>
+  out.innerHTML = deals.length ? `<p class="muted">Top ${Math.min(deals.length, 100)} of ${deals.length.toLocaleString('en-IN')} deals</p>` + deals.slice(0, 100).map(({ d, x, save }) =>
     `<div class="deal">Buy <b>${esc(d.name)} ${esc(d.size)}</b>. Costs ${inr(d.price)} in ${esc(dest)} vs ${inr(x.price)} in ${esc(home)}. <span class="save">You save ${inr(save)}!</span></div>`).join('')
     : `<div class="empty">No bottles are cheaper in ${esc(dest)} than in ${esc(home)}.</div>`;
 }
@@ -159,9 +177,14 @@ let ok = false; try { ok = sessionStorage.getItem('dd-age') === '1'; } catch (e)
 if (ok) unlock();
 
 document.querySelector('.tabs').onclick = e => { const b = e.target.closest('.tab'); if (b) showTab(b.dataset.tab); };
-$('#city').onchange = e => { state.city = e.target.value; renderGrid(); };
-$('#search').oninput = e => { state.q = e.target.value.trim(); renderGrid(); };
-$('#pills').onclick = e => { const p = e.target.closest('.pill'); if (p) { state.cat = p.dataset.cat; renderPills(); renderGrid(); } };
+$('#city').onchange = e => { state.city = e.target.value; state.limit = 60; renderPills(); renderGrid(); };
+$('#search').oninput = e => { state.q = e.target.value.trim(); state.limit = 60; renderGrid(); };
+$('.filters').onclick = e => {
+  const p = e.target.closest('.pill'); if (!p) return; const D = p.dataset;
+  if ('cat' in D) state.cat = D.cat; if ('rate' in D) state.minR = +D.rate; if ('size' in D) state.size = D.size;
+  state.limit = 60; renderPills(); renderGrid();
+};
+$('#more').onclick = () => { state.limit += 60; renderGrid(); };
 $('#find').onclick = findDeals;
 document.addEventListener('click', e => {
   const s = e.target.closest('[data-share]'); if (s) { e.stopPropagation(); share(s.dataset.share); return; }
